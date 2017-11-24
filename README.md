@@ -4,21 +4,41 @@ slackcat is a command line tool that posts messages to [Slack].
 
     $ echo "hello" | slackcat
 
-## Installing
+## Installation
 
-If you have a working go installation run `go get github.com/paulhammond/slackcat`. Prebuilt binaries will be provided soon.
+If you have a working Go installation run `go get github.com/skattyadz/slackcat`.
 
-## Configuring
+There's also a debian package in the [MxM APT Repo]
 
-First, create a [new Slack Incoming Webhook integration][new-webhook].
+## Configuration
 
-Then create a `/etc/slackcat.conf` file, and add your new webhook url:
+You need to create an [Incoming Webhook integration][new-webhook].
 
-    {
-        "webhook_url":"https://my.slack.com/services/hooks/incoming-webhook?token=token"
-    }
+You can then configure slackcat through a config file and/or environment variables.
 
-If you don't have permission to create `/etc/slackcat.conf` then you can create `~/.slackcat.conf` instead.
+### JSON File
+
+```json
+{
+    "webhook_url":"https://hooks.slack.com/services/super/secret/token"
+}
+```
+
+In `/etc/slackcat.conf`, `~/.slackcat.conf` or `./slackcat.conf`
+
+Optional keys: `channel`, `username`, `icon_emoji`, `proxy`. See `slackcat-example.conf` for
+a full example.
+
+
+### Environment Variable
+
+```bash
+$ export SLACKCAT_WEBHOOK_URL=https://hooks.slack.com/services/super/secret/token
+```
+
+Will override file config.
+
+Optional vars: `SLACKCAT_CHANNEL`, `SLACKCAT_USERNAME`, `SLACKCAT_ICON`, `https_proxy`
 
 ## Usage
 
@@ -26,19 +46,36 @@ slackcat will take each line from stdin and post it as a message to Slack:
 
     tail -F logfile | slackcat
 
+Be aware that if a file outputs blank lines, this will result in a 500 error from slack. You can remedy this using
+grep to filter out blank lines:
+
+    tail -F logfile | grep --line-buffered -v '^\s*$' | slackcat
+
 If you'd prefer to provide a message on the command line, you can:
 
     sleep 300; slackcat "done"
 
-By default slackcat will post each message as coming from "user@hostname". If you want a different username, use the `--name` flag:
+### Name
+Default: `user@hostname`
 
     echo ":coffee:" | slackcat --name "coffeebot"
 
-Slackcat will use the channel specified when you set up the incoming webhook. You can override this in the config file by adding a "channel" option, or you can use the `--channel` flag:
+### Channel
+Default: Slack Webhook default
 
-    echo "testing" | slackcat --channel #test
+    echo "don't forget the # sign" | slackcat --channel #test
+    echo "message from slackbot" | slackcat --channel @skattyadz
 
+### Icon ([emoji])
 
+    echo "we're watching you" | slackcat --icon=:family:
+
+### Proxy
+Default: None
+
+    echo "I am not able to connect directly" | slackcat --proxy=http://proxy.example.com:3128
 
 [Slack]: http://slack.com/
 [new-webhook]: https://my.slack.com/services/new/incoming-webhook
+[emoji]: http://www.emoji-cheat-sheet.com/
+[MxM APT repo]: http://apt.mxmdev.com/
